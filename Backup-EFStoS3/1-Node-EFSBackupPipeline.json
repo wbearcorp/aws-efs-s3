@@ -1,0 +1,84 @@
+{
+  "objects": [
+    {
+      "subnetId": "#{mySubnetID}",
+      "imageId": "ami-c481fad3",
+      "securityGroupIds": "#{mySrcSecGroupID}",
+      "instanceType": "#{myInstanceType}",
+      "name": "EC2ResourceObj",
+      "associatePublicIpAddress": "true",
+      "id": "EC2ResourceObj",
+      "type": "Ec2Resource",
+      "terminateAfter": "120 Minutes"
+    },
+    {
+      "stage": "true",
+      "name": "ShellCommandActivityObj",
+      "id": "ShellCommandActivityObj",
+      "runsOn": {
+        "ref": "EC2ResourceObj"
+      },
+      "scriptArgument": [
+        "#{myEfsSource}",
+        "#{myS3Backup}"
+      ],
+      "type": "ShellCommandActivity",
+      "command": "#{myShellCmd}"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "pipelineLogUri": "s3://caa-data-backup/EFStoS3/Log-Backup-EFStoS3/",
+      "scheduleType": "ONDEMAND",
+      "name": "Default",
+      "id": "Default"
+    }
+  ],
+  "parameters": [
+    {
+      "default": "s3://my-bucket/path/Backup",
+      "description": "S3 Bucket to store backup.",
+      "id": "myS3Backup",
+      "type": "String"
+    },
+    {
+      "default": "10.0.1.32:/",
+      "description": "Production EFS mount target IP address.",
+      "id": "myEfsSource",
+      "type": "String"
+    },
+    {
+      "default": "wget https://raw.githubusercontent.com/awslabs/data-pipeline-samples/master/samples/EFSBackup/efs-backup.sh\nchmod a+x efs-backup.sh\n./efs-backup.sh $1 $2",
+      "description": "Shell command to run.",
+      "id": "myShellCmd",
+      "type": "String"
+    },
+    {
+      "default": "m3.medium",
+      "description": "Instance type for creating backups.",
+      "id": "myInstanceType",
+      "type": "String"
+    },
+    {
+      "default": "sg-1111111b",
+      "description": "Security group that can connect to the Production EFS mount point.",
+      "id": "mySrcSecGroupID",
+      "type": "String"
+    },
+    {
+      "default": "subnet-1234abcd",
+      "description": "VPC subnet for your backup EC2 instance (ideally the same subnet used for the production EFS mount point).",
+      "id": "mySubnetID",
+      "type": "String"
+    }
+  ],
+  "values": {
+    "myShellCmd": "wget https://s3.amazonaws.com/caa-data-backup/EFStoS3/efs-backup.sh\nchmod a+x efs-backup.sh\n./efs-backup.sh $1 $2",
+    "myEfsSource": "us-east-1c.fs-bbe62bf2.efs.us-east-1.amazonaws.com:/",
+    "mySrcSecGroupID": "sg-9fd2cee5",
+    "mySubnetID": "subnet-0edfe779",
+    "myInstanceType": "m3.medium",
+    "myS3Backup": "s3://caa-data-backup/EFStoS3/Backup"
+  }
+}

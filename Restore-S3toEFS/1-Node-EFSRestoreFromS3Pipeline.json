@@ -1,0 +1,94 @@
+{
+    "objects": [
+        {
+            "id": "Default",
+            "scheduleType": "cron",
+            "failureAndRerunMode": "CASCADE",
+            "schedule": {"ref": "DefaultSchedule"},
+            "name": "Default",
+            "role": "DataPipelineDefaultRole",
+            "resourceRole": "DataPipelineDefaultResourceRole"
+        },
+        {
+            "id": "EC2ResourceObj",
+            "terminateAfter": "120 Minutes",
+            "instanceType": "#{myInstanceType}",
+            "name": "EC2ResourceObj",
+            "type": "Ec2Resource",
+            "securityGroupIds": [
+                "#{mySrcSecGroupID}"
+            ],
+            "subnetId": "#{mySubnetID}",
+			"imageId": "ami-c481fad3",
+            "associatePublicIpAddress": "true"
+        },
+        {
+            "id": "DefaultSchedule",
+            "name": "Every Day",
+            "startAt": "FIRST_ACTIVATION_DATE_TIME",
+            "type": "Schedule",
+            "period": "1 Days"
+        },
+        {
+            "id": "ShellCommandActivityObj",
+            "name": "ShellCommandActivityObj",
+            "runsOn": {"ref": "EC2ResourceObj"},
+            "command": "#{myShellCmd}",
+            "scriptArgument": [
+                "#{myEfsSource}",
+                "#{myS3Backup}"
+            ],
+            "type": "ShellCommandActivity",
+            "stage": "true"
+        }
+    ],
+    "parameters": [
+        {
+            "id": "myShellCmd",
+            "default": "wget https://raw.githubusercontent.com/awslabs/data-pipeline-samples/master/samples/EFSBackup/efs-restore.sh\nchmod a+x efs-restore.sh\n./efs-restore.sh $1 $2",
+            "description": "Shell command to run.",
+            "type": "String"
+        },
+        {
+            "id": "myInstanceType",
+            "default": "m3.medium",
+            "description": "Instance type for restoring backups.",
+            "allowedValues": [
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c3.large",
+                "c3.xlarge",
+                "c3.2xlarge",
+                "c3.4xlarge",
+                "c3.8xlarge"
+            ],
+            "type": "String"
+        },
+        {
+            "id": "mySubnetID",
+            "default": "subnet-1234abcd",
+            "description": "VPC subnet for your backup EC2 instance (choose a subnet in the same AZ).",
+            "type": "String"
+        },
+        {
+            "id": "mySrcSecGroupID",
+            "default": "sg-1111111b",
+            "description": "Security group that can connect to the EFS mount point.",
+            "type": "String"
+        },
+        {
+            "id": "myEfsSource",
+            "default": "10.0.1.32:/",
+            "description": "Restoration EFS mount target IP address.",
+            "type": "String"
+        },
+        {
+            "id": "myS3Backup",
+            "default": "s3://my-bucket/path/Backup",
+            "description": "S3 Bucket where the backup is stored backup.",
+            "type": "String"
+        }
+    ]
+}
